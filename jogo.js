@@ -6,33 +6,56 @@ sprites.src = "./sprites.png";
 const canvas = document.querySelector("canvas");
 const context = canvas.getContext("2d");
 
-const flappyBird = {
-  spriteX: 0,
-  spriteY: 0,
-  width: 33,
-  height: 24,
-  x: 10,
-  y: 50,
-  speed: 0,
-  gravity: 0.25,
-  update() {
-    flappyBird.y = flappyBird.y + flappyBird.speed;
-    flappyBird.speed = flappyBird.speed + flappyBird.gravity;
-  },
-  draw() {
-    context.drawImage(
-      sprites,
-      flappyBird.spriteX,
-      flappyBird.spriteY, // Sprite X, Y beginning
-      flappyBird.width,
-      flappyBird.height, // Size of sprite recort
-      flappyBird.x,
-      flappyBird.y,
-      flappyBird.width,
-      flappyBird.height
-    );
-  },
-};
+const hitSound = new Audio();
+hitSound.src = './effects/hit.wav';
+
+function doColision(character, object) {
+  return character.y + character.height >= object.y;
+}
+
+function createFlappyBird() {
+  const flappyBird = {
+    spriteX: 0,
+    spriteY: 0,
+    width: 33,
+    height: 24,
+    x: 10,
+    y: 50,
+    speed: 0,
+    gravity: 0.25,
+    jumpForce: 4.6,
+    update() {
+      if (doColision(flappyBird, ground)) {
+        hitSound.play();
+        changeToScreen(Screens.begin);
+        return;
+      }
+  
+      flappyBird.y = flappyBird.y + flappyBird.speed;
+      flappyBird.speed = flappyBird.speed + flappyBird.gravity;
+    },
+    jump() {
+      flappyBird.speed = - flappyBird.jumpForce;
+    },
+    draw() {
+      context.drawImage(
+        sprites,
+        flappyBird.spriteX,
+        flappyBird.spriteY, // Sprite X, Y beginning
+        flappyBird.width,
+        flappyBird.height, // Size of sprite recort
+        flappyBird.x,
+        flappyBird.y,
+        flappyBird.width,
+        flappyBird.height
+      );
+    },
+  };
+
+  return flappyBird;
+}
+
+
 
 // Background
 const background = {
@@ -132,12 +155,16 @@ const getReady = {
 };
 
 // Screens
+const globals = {};
 const Screens = {
   begin: {
+    initialize() {
+      globals.flappyBird = createFlappyBird();
+    },
     draw() {
       background.draw();
       ground.draw();
-      flappyBird.draw();
+      globals.flappyBird.draw();
       getReady.draw();
     },
     click() {
@@ -149,10 +176,13 @@ const Screens = {
     draw() {
       background.draw();
       ground.draw();
-      flappyBird.draw();
+      globals.flappyBird.draw();
+    },
+    click() {
+      globals.flappyBird.jump();
     },
     update() {
-      flappyBird.update();
+      globals.flappyBird.update();
     },
   },
 };
@@ -161,6 +191,10 @@ let activeScreen = Screens.begin;
 
 function changeToScreen(newScreen) {
   activeScreen = newScreen;
+
+  if (activeScreen.initialize) {
+    activeScreen.initialize();
+  }
 }
 
 function loop() {
@@ -170,6 +204,7 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
+changeToScreen(Screens.begin);
 
 window.addEventListener('click', function() {
   console.log('cachorra')
