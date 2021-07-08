@@ -1,10 +1,10 @@
-console.log('Flappy Bird');
+console.log("Flappy Bird");
 
 const sprites = new Image();
-sprites.src = './sprites.png';
+sprites.src = "./sprites.png";
 
-const canvas = document.querySelector('canvas');
-const context = canvas.getContext('2d');
+const canvas = document.querySelector("canvas");
+const context = canvas.getContext("2d");
 
 const flappyBird = {
   spriteX: 0,
@@ -22,12 +22,16 @@ const flappyBird = {
   draw() {
     context.drawImage(
       sprites,
-      flappyBird.spriteX, flappyBird.spriteY, // Sprite X, Y beginning
-      flappyBird.width, flappyBird.height, // Size of sprite recort
-      flappyBird.x, flappyBird.y,
-      flappyBird.width, flappyBird.height,
+      flappyBird.spriteX,
+      flappyBird.spriteY, // Sprite X, Y beginning
+      flappyBird.width,
+      flappyBird.height, // Size of sprite recort
+      flappyBird.x,
+      flappyBird.y,
+      flappyBird.width,
+      flappyBird.height
     );
-  }
+  },
 };
 
 // Background
@@ -39,25 +43,33 @@ const background = {
   x: 0,
   y: canvas.height - 204,
   draw() {
-    context.fillStyle = '#70c5ce';
+    context.fillStyle = "#70c5ce";
     context.fillRect(0, 0, canvas.width, canvas.height);
 
     context.drawImage(
       sprites,
-      background.spriteX, background.spriteY, // Sprite X, Y beginning
-      background.width, background.height, // Size of sprite recort
-      background.x, background.y,
-      background.width, background.height,
+      background.spriteX,
+      background.spriteY, // Sprite X, Y beginning
+      background.width,
+      background.height, // Size of sprite recort
+      background.x,
+      background.y,
+      background.width,
+      background.height
     );
 
     context.drawImage(
       sprites,
-      background.spriteX, background.spriteY, // Sprite X, Y beginning
-      background.width, background.height, // Size of sprite recort
-      background.x + background.width, background.y,
-      background.width, background.height,
+      background.spriteX,
+      background.spriteY, // Sprite X, Y beginning
+      background.width,
+      background.height, // Size of sprite recort
+      background.x + background.width,
+      background.y,
+      background.width,
+      background.height
     );
-  }
+  },
 };
 
 // Ground
@@ -71,31 +83,99 @@ const ground = {
   draw() {
     context.drawImage(
       sprites,
-      ground.spriteX, ground.spriteY, // Sprite X, Y beginning
-      ground.width, ground.height, // Size of sprite recort
-      ground.x, ground.y,
-      ground.width, ground.height,
+      ground.spriteX,
+      ground.spriteY, // Sprite X, Y beginning
+      ground.width,
+      ground.height, // Size of sprite recort
+      ground.x,
+      ground.y,
+      ground.width,
+      ground.height
     );
 
     // To extend ground size
     context.drawImage(
       sprites,
-      ground.spriteX, ground.spriteY, // Sprite X, Y beginning
-      ground.width, ground.height, // Size of sprite recort
-      ground.x + ground.width, ground.y,
-      ground.width, ground.height,
+      ground.spriteX,
+      ground.spriteY, // Sprite X, Y beginning
+      ground.width,
+      ground.height, // Size of sprite recort
+      ground.x + ground.width,
+      ground.y,
+      ground.width,
+      ground.height
     );
-  }
+  },
 };
 
-function loop() {
-  flappyBird.update();
+// Beggining
+const getReady = {
+  spriteX: 134,
+  spriteY: 0,
+  width: 174,
+  height: 152,
+  x: canvas.width / 2 - 174 / 2,
+  y: 50,
+  draw() {
+    context.drawImage(
+      sprites,
+      getReady.spriteX,
+      getReady.spriteY, // Sprite X, Y beginning
+      getReady.width,
+      getReady.height, // Size of sprite recort
+      getReady.x,
+      getReady.y,
+      getReady.width,
+      getReady.height
+    );
+  },
+};
 
-  background.draw();
-  ground.draw();
-  flappyBird.draw();
+// Screens
+const Screens = {
+  begin: {
+    draw() {
+      background.draw();
+      ground.draw();
+      flappyBird.draw();
+      getReady.draw();
+    },
+    click() {
+      changeToScreen(Screens.game);
+    },
+    update() {},
+  },
+  game: {
+    draw() {
+      background.draw();
+      ground.draw();
+      flappyBird.draw();
+    },
+    update() {
+      flappyBird.update();
+    },
+  },
+};
+
+let activeScreen = Screens.begin;
+
+function changeToScreen(newScreen) {
+  activeScreen = newScreen;
+}
+
+function loop() {
+  activeScreen.draw();
+  activeScreen.update();
 
   requestAnimationFrame(loop);
 }
+
+
+window.addEventListener('click', function() {
+  console.log('cachorra')
+  if (activeScreen.click) {
+    activeScreen.click();
+  }
+});
 
 loop();
