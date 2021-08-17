@@ -7,7 +7,9 @@ const canvas = document.querySelector("canvas");
 const context = canvas.getContext("2d");
 
 const hitSound = new Audio();
-hitSound.src = './effects/hit.wav';
+hitSound.src = "./effects/hit.wav";
+
+let frames = 0;
 
 function doColision(character, object) {
   return character.y + character.height >= object.y;
@@ -25,23 +27,43 @@ function createFlappyBird() {
     gravity: 0.25,
     jumpForce: 4.6,
     update() {
-      if (doColision(flappyBird, ground)) {
+      if (doColision(flappyBird, globals.ground)) {
         hitSound.play();
         changeToScreen(Screens.begin);
         return;
       }
-  
+
       flappyBird.y = flappyBird.y + flappyBird.speed;
       flappyBird.speed = flappyBird.speed + flappyBird.gravity;
     },
+    movements: [
+      { spriteX: 0, spriteY: 0 }, // up wings
+      { spriteX: 0, spriteY: 26 }, // middle wings
+      { spriteX: 0, spriteY: 52 }, // down wings
+    ],
     jump() {
-      flappyBird.speed = - flappyBird.jumpForce;
+      flappyBird.speed = -flappyBird.jumpForce;
+    },
+    currentFrame: 0,
+    updateFrame() {
+      const framesInterval = 10;
+
+      if (frames % framesInterval === 0) {
+        const incrementBase = 1;
+        const increment = incrementBase + flappyBird.currentFrame;
+        const repetitionBase = flappyBird.movements.length;
+
+        flappyBird.currentFrame = increment % repetitionBase;
+      }
     },
     draw() {
+      flappyBird.updateFrame();
+      const { spriteX, spriteY } = this.movements[flappyBird.currentFrame];
+
       context.drawImage(
         sprites,
-        flappyBird.spriteX,
-        flappyBird.spriteY, // Sprite X, Y beginning
+        spriteX,
+        spriteY, // Sprite X, Y beginning
         flappyBird.width,
         flappyBird.height, // Size of sprite recort
         flappyBird.x,
@@ -54,8 +76,6 @@ function createFlappyBird() {
 
   return flappyBird;
 }
-
-
 
 // Background
 const background = {
@@ -95,41 +115,158 @@ const background = {
   },
 };
 
-// Ground
-const ground = {
-  spriteX: 0,
-  spriteY: 610,
-  width: 224,
-  height: 112,
-  x: 0,
-  y: canvas.height - 112,
-  draw() {
-    context.drawImage(
-      sprites,
-      ground.spriteX,
-      ground.spriteY, // Sprite X, Y beginning
-      ground.width,
-      ground.height, // Size of sprite recort
-      ground.x,
-      ground.y,
-      ground.width,
-      ground.height
-    );
+function createPipes() {
+  const pipes = {
+    width: 52,
+    height: 400,
+    ground: {
+      spriteX: 0,
+      spriteY: 169,
+    },
+    sky: {
+      spriteX: 52,
+      spriteY: 169,
+    },
+    space: 80,
+    draw() {
+      pipes.pairs.forEach((pair) => {
+        const spaceBetweenPipes = 40;
+        const yRandom = pair.y;
+  
+        const pipeSkyX = pair.x;
+        const pipeSkyY = yRandom - spaceBetweenPipes;
 
-    // To extend ground size
-    context.drawImage(
-      sprites,
-      ground.spriteX,
-      ground.spriteY, // Sprite X, Y beginning
-      ground.width,
-      ground.height, // Size of sprite recort
-      ground.x + ground.width,
-      ground.y,
-      ground.width,
-      ground.height
-    );
-  },
-};
+        // [Sky pipe]
+        context.drawImage(
+          sprites,
+          pipes.sky.spriteX,
+          pipes.sky.spriteY,
+          pipes.width,
+          pipes.height,
+          pipeSkyX,
+          pipeSkyY,
+          pipes.width,
+          pipes.height
+        );
+
+        // [Ground pipe]
+        const pipeGroundX = pair.x;
+        const pipeGroundY = pipes.height + yRandom + spaceBetweenPipes;
+        context.drawImage(
+          sprites,
+          pipes.ground.spriteX,
+          pipes.ground.spriteY,
+          pipes.width,
+          pipes.height,
+          pipeGroundX,
+          pipeGroundY,
+          pipes.width,
+          pipes.height
+        );
+
+        pair.pipeSky = {
+          x: pipeSkyX,
+          y: pipes.height + pipeSkyY
+        }
+
+        pair.pipeGround = {
+          x: pipeGroundX,
+          y: pipeGroundY
+        }
+      });
+    },
+
+    pairs: [{
+      x: canvas.width,
+      y: -150 * (Math.random() + 1),
+    }],
+
+    hasCollisionWithFlappyBird(pair) {
+      // console.log(pair);
+      if (globals.flappyBird.x <= pair.x) {
+        console.log(globals.flappyBird.y)
+        console.log(pair)
+        if (globals.flappyBird.y <= pair.pipeSky.y) {
+          return true;
+        } else if ((globals.flappyBird.y + globals.flappyBird.height) <= pair.pipeGround.y) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+
+    update() {
+      if (frames % 100 === 0) {
+        pipes.pairs.push({
+          x: canvas.width,
+          y: -150 * (Math.random() + 1),
+        });
+      }
+
+      pipes.pairs.forEach(pair => {
+        pair.x = pair.x - 2;
+
+        if (pipes.hasCollisionWithFlappyBird(pair)) {
+
+        }
+
+        if (pair.x + pipes.width <= 0) {
+          pipes.pairs.shift();
+        }
+      })
+    },
+  };
+
+  return pipes;
+}
+
+// Ground
+function createGround() {
+  const ground = {
+    spriteX: 0,
+    spriteY: 610,
+    width: 224,
+    height: 112,
+    x: 0,
+    y: canvas.height - 112,
+    update() {
+      const groundMovement = 1;
+      const repite = ground.width / 2;
+      const movement = (ground.x -= groundMovement);
+
+      ground.x = movement % repite;
+    },
+    draw() {
+      context.drawImage(
+        sprites,
+        ground.spriteX,
+        ground.spriteY, // Sprite X, Y beginning
+        ground.width,
+        ground.height, // Size of sprite recort
+        ground.x,
+        ground.y,
+        ground.width,
+        ground.height
+      );
+
+      // To extend ground size
+      context.drawImage(
+        sprites,
+        ground.spriteX,
+        ground.spriteY, // Sprite X, Y beginning
+        ground.width,
+        ground.height, // Size of sprite recort
+        ground.x + ground.width,
+        ground.y,
+        ground.width,
+        ground.height
+      );
+    },
+  };
+
+  return ground;
+}
 
 // Beggining
 const getReady = {
@@ -160,22 +297,27 @@ const Screens = {
   begin: {
     initialize() {
       globals.flappyBird = createFlappyBird();
+      globals.ground = createGround();
+      globals.pipes = createPipes();
     },
     draw() {
       background.draw();
-      ground.draw();
+      globals.ground.draw();
       globals.flappyBird.draw();
       getReady.draw();
     },
     click() {
       changeToScreen(Screens.game);
     },
-    update() {},
+    update() {
+      globals.ground.update();
+    },
   },
   game: {
     draw() {
       background.draw();
-      ground.draw();
+      globals.pipes.draw();
+      globals.ground.draw();
       globals.flappyBird.draw();
     },
     click() {
@@ -183,6 +325,8 @@ const Screens = {
     },
     update() {
       globals.flappyBird.update();
+      globals.ground.update();
+      globals.pipes.update();
     },
   },
 };
@@ -201,13 +345,13 @@ function loop() {
   activeScreen.draw();
   activeScreen.update();
 
+  frames += 1;
   requestAnimationFrame(loop);
 }
 
 changeToScreen(Screens.begin);
 
-window.addEventListener('click', function() {
-  console.log('cachorra')
+window.addEventListener("click", function () {
   if (activeScreen.click) {
     activeScreen.click();
   }
